@@ -1,0 +1,16 @@
+[package]
+name = "mst-visualizer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.9.1", features = ["dynamic"] }
+bevy_rapier2d = { version = "0.20.0", features = ["simd-stable"] }
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
