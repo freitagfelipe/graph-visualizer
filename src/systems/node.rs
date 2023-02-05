@@ -45,3 +45,42 @@ pub fn spawn_node(
         }
     }
 }
+
+pub fn remove_node(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, With<Node>)>,
+    buttons: Res<Input<MouseButton>>,
+    windows: Res<Windows>,
+    node_settings: Res<NodeSettings>,
+    visualizer_state: ResMut<VisualizerState>,
+) {
+    if visualizer_state.is_moving_node {
+        return;
+    }
+
+    if buttons.just_released(MouseButton::Right) {
+        let window = windows
+            .get_primary()
+            .expect("Can not get the primary window");
+
+        if let Some((x, y)) = utils::get_mouse_coordinates(window) {
+            let mut entity_to_despawn = None;
+
+            for (entity, transform, _) in query.iter() {
+                if utils::is_mouse_on_node(
+                    x,
+                    y,
+                    transform.translation.x,
+                    transform.translation.y,
+                    node_settings.radius,
+                ) {
+                    entity_to_despawn = Some(entity);
+                }
+            }
+
+            if let Some(entity_to_despawn) = entity_to_despawn {
+                commands.entity(entity_to_despawn).despawn();
+            }
+        }
+    }
+}
