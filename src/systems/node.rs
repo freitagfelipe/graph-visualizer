@@ -4,6 +4,11 @@ use crate::utils;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 
+pub struct ChangeNodeColorEvent {
+    pub entity: Entity,
+    pub color: Color,
+}
+
 fn fix_node_position_if_needed(
     height: f32,
     width: f32,
@@ -119,12 +124,12 @@ pub fn remove_node(
 
 pub fn mark_node_to_move(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, &Handle<ColorMaterial>)>,
+    query: Query<(Entity, &Transform)>,
+    mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     node_settings: Res<NodeSettings>,
     mut visualizer_state: ResMut<VisualizerState>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if visualizer_state.is_moving_node {
         return;
@@ -144,7 +149,7 @@ pub fn mark_node_to_move(
 
     let mut node_to_mark = None;
 
-    for (entity, transform, color_material) in query.iter() {
+    for (entity, transform) in query.iter() {
         if utils::is_mouse_on_node(
             x,
             y,
@@ -152,17 +157,18 @@ pub fn mark_node_to_move(
             transform.translation.y,
             node_settings.radius,
         ) {
-            node_to_mark = Some((entity, color_material));
+            node_to_mark = Some(entity);
         }
     }
 
-    if let Some((entity, color_material)) = node_to_mark {
+    if let Some(entity) = node_to_mark {
         commands.entity(entity).insert(MovingNode);
         visualizer_state.is_moving_node = true;
 
-        if let Some(mut color_material) = materials.get_mut(color_material) {
-            color_material.color = node_settings.moving_color;
-        }
+        event_writer.send(ChangeNodeColorEvent {
+            entity,
+            color: node_settings.moving_color,
+        });
     }
 }
 
@@ -196,11 +202,11 @@ pub fn move_node(
 
 pub fn unmark_node_that_was_moving(
     mut commands: Commands,
-    query: Query<(Entity, &Handle<ColorMaterial>, With<MovingNode>)>,
+    query: Query<(Entity, With<MovingNode>)>,
+    mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     node_settings: Res<NodeSettings>,
     mut visualizer_state: ResMut<VisualizerState>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if !visualizer_state.is_moving_node {
         return;
@@ -212,16 +218,17 @@ pub fn unmark_node_that_was_moving(
 
     visualizer_state.is_moving_node = false;
 
-    let (entity, color_material, _) = query
+    let (entity, _) = query
         .iter()
         .next()
         .expect("Can not get the node that was moving");
 
     commands.entity(entity).remove::<MovingNode>();
 
-    if let Some(mut color_material) = materials.get_mut(color_material) {
-        color_material.color = node_settings.base_color;
-    }
+    event_writer.send(ChangeNodeColorEvent {
+        entity,
+        color: node_settings.base_color,
+    });
 }
 
 pub fn fix_off_screen_node_positions(
@@ -247,5 +254,17 @@ pub fn fix_off_screen_node_positions(
 
         transform.translation.x = new_node_x;
         transform.translation.y = new_node_y;
+    }
+}
+
+pub fn change_node_color(
+    mut commands: Commands,
+    mut event_reader: EventReader<ChangeNodeColorEvent>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    for ev in event_reader.iter() {
+        commands
+            .entity(ev.entity)
+            .insert(materials.add(ColorMaterial::from(ev.color)));
     }
 }
