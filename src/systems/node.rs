@@ -161,7 +161,7 @@ pub fn mark_node_to_move(
         visualizer_state.is_moving_node = true;
 
         if let Some(mut color_material) = materials.get_mut(color_material) {
-            color_material.color = node_settings.selected_color;
+            color_material.color = node_settings.moving_color;
         }
     }
 }
