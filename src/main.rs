@@ -6,7 +6,7 @@ fn main() {
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                title: "Graph visualizer".to_string(),
+                title: "MST visualizer".to_string(),
                 width: 800.0,
                 height: 600.0,
                 resizable: true,
