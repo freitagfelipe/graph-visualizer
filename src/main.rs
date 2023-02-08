@@ -1,12 +1,12 @@
 use bevy::{prelude::*, window::WindowResizeConstraints};
-use mst_visualizer::AppPlugins;
+use graph_visualizer::AppPlugins;
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::BLACK))
+        .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                title: "MST visualizer".to_string(),
+                title: "Graph visualizer".to_string(),
                 width: 800.0,
                 height: 600.0,
                 resizable: true,
