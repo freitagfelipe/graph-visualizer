@@ -1669,6 +1669,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "graph-visualizer"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_prototype_lyon",
+ "bevy_rapier2d",
+]
+
+[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2089,15 +2098,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.42.0",
-]
-
-[[package]]
-name = "mst-visualizer"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_prototype_lyon",
- "bevy_rapier2d",
 ]
 
 [[package]]
