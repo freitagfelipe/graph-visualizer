@@ -13,6 +13,10 @@ pub struct UpdateEdgeEvent {
     pub transform: Transform,
 }
 
+pub struct RemoveEdgeEvent {
+    pub removed_node: Entity,
+}
+
 pub fn create_edge(
     mut commands: Commands,
     query: Query<(Entity, &Transform, With<SelectedNode>)>,
@@ -96,6 +100,22 @@ pub fn update_edge_after_moving_node(
                 path_builder = PathBuilder::new();
 
                 path_builder.move_to(Vec2::new(translation.x, translation.y));
+            }
+        }
+    }
+}
+
+pub fn remove_edge(
+    mut commands: Commands,
+    query: Query<(Entity, &NeighborNodes)>,
+    mut event_reader: EventReader<RemoveEdgeEvent>,
+) {
+    for ev in event_reader.iter() {
+        let removed_node = ev.removed_node;
+
+        for (entity, neighbor_nodes) in query.iter() {
+            if neighbor_nodes.v == removed_node || neighbor_nodes.u == removed_node {
+                commands.entity(entity).despawn();
             }
         }
     }
