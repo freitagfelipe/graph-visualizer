@@ -1,4 +1,4 @@
-use crate::components::{MovingNode, Node};
+use crate::components::{MovingNode, Node, SelectedNode};
 use crate::resources::{NodeSettings, VisualizerState};
 use crate::utils;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
@@ -202,7 +202,7 @@ pub fn move_node(
 
 pub fn unmark_node_that_was_moving(
     mut commands: Commands,
-    query: Query<(Entity, With<MovingNode>)>,
+    query: Query<(Entity, Option<&SelectedNode>, With<MovingNode>)>,
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     node_settings: Res<NodeSettings>,
@@ -218,7 +218,7 @@ pub fn unmark_node_that_was_moving(
 
     visualizer_state.is_moving_node = false;
 
-    let (entity, _) = query
+    let (entity, selected_node, _) = query
         .iter()
         .next()
         .expect("Can not get the node that was moving");
@@ -227,7 +227,10 @@ pub fn unmark_node_that_was_moving(
 
     event_writer.send(ChangeNodeColorEvent {
         entity,
-        color: node_settings.base_color,
+        color: match selected_node {
+            Some(_) => node_settings.selected_color,
+            None => node_settings.base_color,
+        },
     });
 }
 
