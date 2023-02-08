@@ -4,6 +4,7 @@ use crate::utils;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 
+use super::edges::UpdateEdgeEvent;
 pub struct ChangeNodeColorEvent {
     pub entity: Entity,
     pub color: Color,
@@ -12,25 +13,30 @@ pub struct ChangeNodeColorEvent {
 fn fix_node_position_if_needed(
     height: f32,
     width: f32,
-    mouse_x: f32,
-    mouse_y: f32,
+    node_x: f32,
+    node_y: f32,
     radius: f32,
-) -> (f32, f32) {
-    let mut new_node_position = (mouse_x, mouse_y);
+) -> Option<(f32, f32)> {
+    let mut x = node_x;
+    let mut y = node_y;
 
-    if mouse_x + radius >= width / 2.0 {
-        new_node_position.0 = width / 2.0 - radius;
-    } else if mouse_x - radius <= width * -1.0 / 2.0 {
-        new_node_position.0 = (width / 2.0 - radius) * -1.0;
+    if node_x + radius >= width / 2.0 {
+        x = width / 2.0 - radius;
+    } else if node_x - radius <= width * -1.0 / 2.0 {
+        x = (width / 2.0 - radius) * -1.0;
     }
 
-    if mouse_y + radius >= height / 2.0 {
-        new_node_position.1 = height / 2.0 - radius;
-    } else if mouse_y - radius <= height * -1.0 / 2.0 {
-        new_node_position.1 = (height / 2.0 - radius) * -1.0;
+    if node_y + radius >= height / 2.0 {
+        y = height / 2.0 - radius;
+    } else if node_y - radius <= height * -1.0 / 2.0 {
+        y = (height / 2.0 - radius) * -1.0;
     }
 
-    new_node_position
+    if x != node_x || y != node_y {
+        return Some((x, y));
+    }
+
+    None
 }
 
 pub fn spawn_node(
@@ -72,7 +78,7 @@ pub fn spawn_node(
                 .add(shape::Circle::new(node_settings.radius).into())
                 .into(),
             material: materials.add(ColorMaterial::from(node_settings.base_color)),
-            transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
+            transform: Transform::from_translation(Vec3::new(x, y, 1.0)),
             ..default()
         },
         Node,
@@ -173,12 +179,13 @@ pub fn mark_node_to_move(
 }
 
 pub fn move_node(
-    mut query: Query<(&mut Transform, With<MovingNode>)>,
+    mut query: Query<(Entity, &mut Transform, With<MovingNode>)>,
+    mut event_writer: EventWriter<UpdateEdgeEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     visualizer_state: Res<VisualizerState>,
 ) {
-    if !visualizer_state.is_moving_node {
+    if !visualizer_state.is_moving_node || query.iter().size_hint().0 == 0 {
         return;
     }
 
@@ -194,10 +201,15 @@ pub fn move_node(
         return;
     };
 
-    for (mut transform, _) in query.iter_mut() {
-        transform.translation.x = x;
-        transform.translation.y = y;
-    }
+    let (entity, mut transform, _) = query.iter_mut().next().expect("Can not get moving node");
+
+    transform.translation.x = x;
+    transform.translation.y = y;
+
+    event_writer.send(UpdateEdgeEvent {
+        changed_node: entity,
+        transform: *transform,
+    });
 }
 
 pub fn unmark_node_that_was_moving(
@@ -234,8 +246,63 @@ pub fn unmark_node_that_was_moving(
     });
 }
 
+pub fn mark_node_to_create_edge(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, Option<&SelectedNode>, With<Node>)>,
+    mut event_writer: EventWriter<ChangeNodeColorEvent>,
+    windows: Res<Windows>,
+    buttons: Res<Input<MouseButton>>,
+    node_settings: Res<NodeSettings>,
+    visualizer_state: Res<VisualizerState>,
+) {
+    if visualizer_state.is_moving_node {
+        return;
+    }
+
+    if !buttons.just_released(MouseButton::Middle) {
+        return;
+    }
+
+    let window = windows
+        .get_primary()
+        .expect("Can not get the primary window");
+
+    let Some((x, y)) = utils::get_mouse_coordinates(window) else {
+        return;
+    };
+
+    for (entity, transform, selected_node, _) in query.iter() {
+        if !utils::is_mouse_on_node(
+            x,
+            y,
+            transform.translation.x,
+            transform.translation.y,
+            node_settings.radius,
+        ) {
+            continue;
+        }
+
+        if selected_node.is_some() {
+            commands.entity(entity).remove::<SelectedNode>();
+        } else {
+            commands.entity(entity).insert(SelectedNode);
+        }
+
+        event_writer.send(ChangeNodeColorEvent {
+            entity,
+            color: match selected_node {
+                Some(_) => node_settings.base_color,
+                None => node_settings.selected_color,
+            },
+        });
+
+        break;
+    }
+}
+
 pub fn fix_off_screen_node_positions(
-    mut query: Query<(&mut Transform, With<Node>)>,
+    mut query: Query<(Entity, &mut Transform, With<Node>)>,
+    mut event_writer: EventWriter<UpdateEdgeEvent>,
     windows: Res<Windows>,
     node_settings: Res<NodeSettings>,
 ) {
@@ -246,17 +313,24 @@ pub fn fix_off_screen_node_positions(
     let height = window.physical_height();
     let width = window.physical_width();
 
-    for (mut transform, _) in query.iter_mut() {
-        let (new_node_x, new_node_y) = fix_node_position_if_needed(
+    for (entity, mut transform, _) in query.iter_mut() {
+        let Some((new_x, new_y)) = fix_node_position_if_needed(
             height as f32,
             width as f32,
             transform.translation.x,
             transform.translation.y,
             node_settings.radius,
-        );
+        ) else {
+            continue;
+        };
 
-        transform.translation.x = new_node_x;
-        transform.translation.y = new_node_y;
+        transform.translation.x = new_x;
+        transform.translation.y = new_y;
+
+        event_writer.send(UpdateEdgeEvent {
+            changed_node: entity,
+            transform: *transform,
+        });
     }
 }
 
