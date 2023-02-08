@@ -23,3 +23,18 @@ impl Default for NodeSettings {
         }
     }
 }
+
+#[derive(Resource)]
+pub struct EdgeSettings {
+    pub color: Color,
+    pub size: f32,
+}
+
+impl Default for EdgeSettings {
+    fn default() -> Self {
+        Self {
+            color: Color::ALICE_BLUE,
+            size: 3.5,
+        }
+    }
+}
