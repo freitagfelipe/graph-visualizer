@@ -4,7 +4,8 @@ use crate::utils;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 
-use super::edges::UpdateEdgeEvent;
+use super::edges::{RemoveEdgeEvent, UpdateEdgeEvent};
+
 pub struct ChangeNodeColorEvent {
     pub entity: Entity,
     pub color: Color,
@@ -88,6 +89,7 @@ pub fn spawn_node(
 pub fn remove_node(
     mut commands: Commands,
     query: Query<(Entity, &Transform, With<Node>)>,
+    mut event_writer: EventWriter<RemoveEdgeEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     node_settings: Res<NodeSettings>,
@@ -125,6 +127,10 @@ pub fn remove_node(
 
     if let Some(entity_to_despawn) = entity_to_despawn {
         commands.entity(entity_to_despawn).despawn();
+
+        event_writer.send(RemoveEdgeEvent {
+            removed_node: entity_to_despawn,
+        });
     }
 }
 
