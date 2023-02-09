@@ -1,4 +1,7 @@
-use bevy::{prelude::*, window::WindowResizeConstraints};
+use bevy::{
+    prelude::*,
+    window::{PresentMode, WindowResizeConstraints},
+};
 use graph_visualizer::AppPlugins;
 
 fn main() {
@@ -15,6 +18,7 @@ fn main() {
                     min_height: 600.0,
                     ..default()
                 },
+                present_mode: PresentMode::AutoNoVsync,
                 ..default()
             },
             ..default()
