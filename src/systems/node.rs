@@ -126,6 +126,8 @@ pub fn remove_node(
             node_settings.radius,
         ) {
             entity_to_despawn = Some(entity);
+
+            break;
         }
     }
 
@@ -145,7 +147,7 @@ pub fn mark_node_to_move(
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     node_settings: Res<NodeSettings>,
-    mut visualizer_state: ResMut<VisualizerState>,
+    visualizer_state: Res<VisualizerState>,
 ) {
     if visualizer_state.is_moving_node {
         return;
@@ -174,12 +176,17 @@ pub fn mark_node_to_move(
             node_settings.radius,
         ) {
             node_to_mark = Some(entity);
+
+            break;
         }
     }
 
     if let Some(entity) = node_to_mark {
         commands.entity(entity).insert(MovingNode);
-        visualizer_state.is_moving_node = true;
+
+        commands.insert_resource(VisualizerState {
+            is_moving_node: true,
+        });
 
         event_writer.send(ChangeNodeColorEvent {
             entity,
@@ -191,15 +198,10 @@ pub fn mark_node_to_move(
 pub fn move_node(
     mut query: Query<(Entity, &mut Transform, With<MovingNode>)>,
     mut event_writer: EventWriter<UpdateEdgeEvent>,
-    buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     visualizer_state: Res<VisualizerState>,
 ) {
-    if !visualizer_state.is_moving_node || query.iter().size_hint().0 == 0 {
-        return;
-    }
-
-    if !buttons.pressed(MouseButton::Left) {
+    if !visualizer_state.is_moving_node {
         return;
     }
 
@@ -211,7 +213,9 @@ pub fn move_node(
         return;
     };
 
-    let (entity, mut transform, _) = query.iter_mut().next().expect("Can not get moving node");
+    let (entity, mut transform, _) = query
+        .get_single_mut()
+        .expect("Move node: no moving entity or more than one");
 
     transform.translation.x = x;
     transform.translation.y = y;
@@ -228,7 +232,7 @@ pub fn unmark_node_that_was_moving(
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     node_settings: Res<NodeSettings>,
-    mut visualizer_state: ResMut<VisualizerState>,
+    visualizer_state: Res<VisualizerState>,
 ) {
     if !visualizer_state.is_moving_node {
         return;
@@ -238,12 +242,13 @@ pub fn unmark_node_that_was_moving(
         return;
     }
 
-    visualizer_state.is_moving_node = false;
-
     let (entity, selected_node, _) = query
-        .iter()
-        .next()
-        .expect("Can not get the node that was moving");
+        .get_single()
+        .expect("Unmark node that was moving: no moving entity or more than one");
+
+    commands.insert_resource(VisualizerState {
+        is_moving_node: false,
+    });
 
     commands.entity(entity).remove::<MovingNode>();
 
