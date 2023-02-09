@@ -1,5 +1,6 @@
 use bevy::{app::PluginGroupBuilder, prelude::*};
 
+mod edges;
 mod node;
 mod setup;
 mod window;
@@ -12,5 +13,6 @@ impl PluginGroup for AppPlugins {
             .add(setup::SetupPlugin)
             .add(window::WindowPlugin)
             .add(node::NodePlugin)
+            .add(edges::EdgesPlugin)
     }
 }

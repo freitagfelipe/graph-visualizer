@@ -14,6 +14,7 @@ impl Plugin for NodePlugin {
             .add_system(node::mark_node_to_move)
             .add_system(node::move_node)
             .add_system(node::unmark_node_that_was_moving)
+            .add_system(node::mark_node_to_create_edge)
             .add_system(node::change_node_color)
             .add_system(
                 node::fix_off_screen_node_positions
