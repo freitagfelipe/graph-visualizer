@@ -17,11 +17,16 @@ pub struct RemoveEdgeEvent {
     pub removed_node: Entity,
 }
 
-pub fn create_edge(
+pub struct CreateOrUnspawnEdgeEvent {
+    pub neighbor_nodes: NeighborNodes,
+    pub path: Path,
+}
+
+pub fn emit_create_or_unspawn_edge_event(
     mut commands: Commands,
     query: Query<(Entity, &Transform, With<SelectedNode>)>,
-    mut event_writer: EventWriter<ChangeNodeColorEvent>,
-    edge_settings: Res<EdgeSettings>,
+    mut change_color_event_writer: EventWriter<ChangeNodeColorEvent>,
+    mut create_or_unspawn_edge_event_writer: EventWriter<CreateOrUnspawnEdgeEvent>,
     node_settings: Res<NodeSettings>,
 ) {
     if query.iter().size_hint().0 < 2 {
@@ -43,29 +48,59 @@ pub fn create_edge(
     commands.entity(first_entity).remove::<SelectedNode>();
     commands.entity(second_entity).remove::<SelectedNode>();
 
-    event_writer.send(ChangeNodeColorEvent {
+    change_color_event_writer.send(ChangeNodeColorEvent {
         entity: first_entity,
         color: node_settings.base_color,
     });
 
-    event_writer.send(ChangeNodeColorEvent {
+    change_color_event_writer.send(ChangeNodeColorEvent {
         entity: second_entity,
         color: node_settings.base_color,
     });
 
-    commands.spawn((
-        NeighborNodes {
+    create_or_unspawn_edge_event_writer.send(CreateOrUnspawnEdgeEvent {
+        neighbor_nodes: NeighborNodes {
             v: first_entity,
             u: second_entity,
             pos_v: *start_pos,
             pos_u: *end_pos,
         },
-        GeometryBuilder::build_as(
-            &line,
-            DrawMode::Stroke(StrokeMode::new(edge_settings.color, edge_settings.size)),
-            Transform::default(),
-        ),
-    ));
+        path: line,
+    });
+}
+
+pub fn create_or_unspawn_edge(
+    mut commands: Commands,
+    query: Query<(Entity, &NeighborNodes)>,
+    mut event_reader: EventReader<CreateOrUnspawnEdgeEvent>,
+    edge_settings: Res<EdgeSettings>,
+) {
+    'first_loop: for ev in event_reader.iter() {
+        for (entity, neighbor_nodes) in query.iter() {
+            if neighbor_nodes.u == ev.neighbor_nodes.u && neighbor_nodes.v == ev.neighbor_nodes.v
+                || neighbor_nodes.u == ev.neighbor_nodes.v
+                    && neighbor_nodes.v == ev.neighbor_nodes.u
+            {
+                commands.entity(entity).despawn();
+
+                continue 'first_loop;
+            }
+        }
+
+        commands.spawn((
+            NeighborNodes {
+                v: ev.neighbor_nodes.v,
+                u: ev.neighbor_nodes.u,
+                pos_v: ev.neighbor_nodes.pos_v,
+                pos_u: ev.neighbor_nodes.pos_u,
+            },
+            GeometryBuilder::build_as(
+                &ev.path,
+                DrawMode::Stroke(StrokeMode::new(edge_settings.color, edge_settings.size)),
+                Transform::default(),
+            ),
+        ));
+    }
 }
 
 pub fn update_edge_after_moving_node(
@@ -105,7 +140,7 @@ pub fn update_edge_after_moving_node(
     }
 }
 
-pub fn remove_edge(
+pub fn remove_edge_after_remove_node(
     mut commands: Commands,
     query: Query<(Entity, &NeighborNodes)>,
     mut event_reader: EventReader<RemoveEdgeEvent>,
