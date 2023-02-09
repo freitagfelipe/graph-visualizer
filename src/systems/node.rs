@@ -355,3 +355,17 @@ pub fn change_node_color(
             .insert(materials.add(ColorMaterial::from(ev.color)));
     }
 }
+
+pub fn emit_update_edge_event_after_node_collision(
+    query: Query<(Entity, &Velocity, &Transform, With<Node>)>,
+    mut event_writer: EventWriter<UpdateEdgeEvent>,
+) {
+    for (entity, velocity, transform, _) in query.iter() {
+        if velocity.angvel != 0.0 || velocity.linvel != Vec2::ZERO {
+            event_writer.send(UpdateEdgeEvent {
+                changed_node: entity,
+                transform: *transform,
+            });
+        }
+    }
+}
