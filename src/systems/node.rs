@@ -73,6 +73,10 @@ pub fn spawn_node(
             linear_damping: 4.0,
             angular_damping: 4.0,
         },
+        Velocity {
+            linvel: Vec2::ZERO,
+            angvel: 0.0,
+        },
         Restitution::coefficient(0.5),
         MaterialMesh2dBundle {
             mesh: meshes
