@@ -70,14 +70,14 @@ pub fn spawn_node(
         Collider::ball(node_settings.radius),
         GravityScale(0.0),
         Damping {
-            linear_damping: 4.0,
-            angular_damping: 4.0,
+            linear_damping: 10.0,
+            ..default()
         },
         Velocity {
             linvel: Vec2::ZERO,
             angvel: 0.0,
         },
-        Restitution::coefficient(0.5),
+        Restitution::coefficient(0.01),
         MaterialMesh2dBundle {
             mesh: meshes
                 .add(shape::Circle::new(node_settings.radius).into())
@@ -142,7 +142,7 @@ pub fn remove_node(
 
 pub fn mark_node_to_move(
     mut commands: Commands,
-    query: Query<(Entity, &Transform)>,
+    query: Query<(Entity, &Transform, With<Node>)>,
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
@@ -167,7 +167,7 @@ pub fn mark_node_to_move(
 
     let mut node_to_mark = None;
 
-    for (entity, transform) in query.iter() {
+    for (entity, transform, _) in query.iter() {
         if utils::is_mouse_on_node(
             x,
             y,
