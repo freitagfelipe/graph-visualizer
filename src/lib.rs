@@ -4,4 +4,4 @@ mod resources;
 mod systems;
 mod utils;
 
-pub use plugins::AppPlugins;
+pub use plugins::GraphPlugins;

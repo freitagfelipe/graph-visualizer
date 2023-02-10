@@ -5,9 +5,9 @@ mod node;
 mod setup;
 mod window;
 
-pub struct AppPlugins;
+pub struct GraphPlugins;
 
-impl PluginGroup for AppPlugins {
+impl PluginGroup for GraphPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(setup::SetupPlugin)

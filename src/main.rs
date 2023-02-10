@@ -2,7 +2,7 @@ use bevy::{
     prelude::*,
     window::{PresentMode, WindowResizeConstraints},
 };
-use graph_visualizer::AppPlugins;
+use graph_visualizer::GraphPlugins;
 
 fn main() {
     App::new()
@@ -23,6 +23,6 @@ fn main() {
             },
             ..default()
         }))
-        .add_plugins(AppPlugins)
+        .add_plugins(GraphPlugins)
         .run();
 }
