@@ -70,14 +70,13 @@ pub fn spawn_node(
         Collider::ball(node_settings.radius),
         GravityScale(0.0),
         Damping {
-            linear_damping: 10.0,
+            linear_damping: 20.0,
             ..default()
         },
         Velocity {
             linvel: Vec2::ZERO,
-            angvel: 0.0,
+            ..default()
         },
-        Restitution::coefficient(0.01),
         MaterialMesh2dBundle {
             mesh: meshes
                 .add(shape::Circle::new(node_settings.radius).into())
@@ -366,7 +365,7 @@ pub fn emit_update_edge_event_after_node_collision(
     mut event_writer: EventWriter<UpdateEdgeEvent>,
 ) {
     for (entity, velocity, transform, _) in query.iter() {
-        if velocity.angvel != 0.0 || velocity.linvel != Vec2::ZERO {
+        if velocity.linvel != Vec2::ZERO {
             event_writer.send(UpdateEdgeEvent {
                 changed_node: entity,
                 transform: *transform,
