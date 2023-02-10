@@ -15,5 +15,5 @@
 ## Projects using the graph visualizer
 
 - Visualizing Breadth-first Search and Depth-first Search algorithms (coming soon)
-- Visualizing Minimal Spannig Tree (MST) (coming soon)
+- Visualizing Minimal Spannig Tree (MST) algorithm (coming soon)
 - Visualizing Dijkstra's Shortest Path algorithm (coming soon)
