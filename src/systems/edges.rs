@@ -24,7 +24,7 @@ pub struct CreateOrUnspawnEdgeEvent {
 
 pub fn emit_create_or_unspawn_edge_event(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, With<SelectedNode>)>,
+    query: Query<(Entity, &Transform), With<SelectedNode>>,
     mut change_color_event_writer: EventWriter<ChangeNodeColorEvent>,
     mut create_or_unspawn_edge_event_writer: EventWriter<CreateOrUnspawnEdgeEvent>,
     node_settings: Res<NodeSettings>,
@@ -35,8 +35,8 @@ pub fn emit_create_or_unspawn_edge_event(
 
     let mut iter = query.iter();
 
-    let (first_entity, start_pos, _) = iter.next().expect("Can not get the first selected node");
-    let (second_entity, end_pos, _) = iter.next().expect("Can not get the second selected node");
+    let (first_entity, start_pos) = iter.next().expect("Can not get the first selected node");
+    let (second_entity, end_pos) = iter.next().expect("Can not get the second selected node");
 
     let mut path_builder = PathBuilder::new();
 

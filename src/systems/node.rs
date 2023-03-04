@@ -91,7 +91,7 @@ pub fn spawn_node(
 
 pub fn remove_node(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, With<Node>)>,
+    query: Query<(Entity, &Transform), With<Node>>,
     mut event_writer: EventWriter<RemoveEdgeEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
@@ -116,7 +116,7 @@ pub fn remove_node(
 
     let mut entity_to_despawn = None;
 
-    for (entity, transform, _) in query.iter() {
+    for (entity, transform) in query.iter() {
         if utils::is_mouse_on_node(
             x,
             y,
@@ -141,7 +141,7 @@ pub fn remove_node(
 
 pub fn mark_node_to_move(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, With<Node>)>,
+    query: Query<(Entity, &Transform), With<Node>>,
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
@@ -166,7 +166,7 @@ pub fn mark_node_to_move(
 
     let mut node_to_mark = None;
 
-    for (entity, transform, _) in query.iter() {
+    for (entity, transform) in query.iter() {
         if utils::is_mouse_on_node(
             x,
             y,
@@ -195,7 +195,7 @@ pub fn mark_node_to_move(
 }
 
 pub fn move_node(
-    mut query: Query<(Entity, &mut Transform, With<MovingNode>)>,
+    mut query: Query<(Entity, &mut Transform), With<MovingNode>>,
     mut event_writer: EventWriter<UpdateEdgeEvent>,
     windows: Res<Windows>,
     visualizer_state: Res<VisualizerState>,
@@ -212,7 +212,7 @@ pub fn move_node(
         return;
     };
 
-    let (entity, mut transform, _) = query
+    let (entity, mut transform) = query
         .get_single_mut()
         .expect("Move node: no moving entity or more than one");
 
@@ -227,7 +227,7 @@ pub fn move_node(
 
 pub fn unmark_node_that_was_moving(
     mut commands: Commands,
-    query: Query<(Entity, Option<&SelectedNode>, With<MovingNode>)>,
+    query: Query<(Entity, Option<&SelectedNode>), With<MovingNode>>,
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     buttons: Res<Input<MouseButton>>,
     node_settings: Res<NodeSettings>,
@@ -241,7 +241,7 @@ pub fn unmark_node_that_was_moving(
         return;
     }
 
-    let (entity, selected_node, _) = query
+    let (entity, selected_node) = query
         .get_single()
         .expect("Unmark node that was moving: no moving entity or more than one");
 
@@ -262,7 +262,7 @@ pub fn unmark_node_that_was_moving(
 
 pub fn mark_node_to_create_edge(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, Option<&SelectedNode>, With<Node>)>,
+    query: Query<(Entity, &Transform, Option<&SelectedNode>), With<Node>>,
     mut event_writer: EventWriter<ChangeNodeColorEvent>,
     windows: Res<Windows>,
     buttons: Res<Input<MouseButton>>,
@@ -285,7 +285,7 @@ pub fn mark_node_to_create_edge(
         return;
     };
 
-    for (entity, transform, selected_node, _) in query.iter() {
+    for (entity, transform, selected_node) in query.iter() {
         if !utils::is_mouse_on_node(
             x,
             y,
@@ -315,7 +315,7 @@ pub fn mark_node_to_create_edge(
 }
 
 pub fn fix_off_screen_node_positions(
-    mut query: Query<(Entity, &mut Transform, With<Node>)>,
+    mut query: Query<(Entity, &mut Transform), With<Node>>,
     mut event_writer: EventWriter<UpdateEdgeEvent>,
     windows: Res<Windows>,
     node_settings: Res<NodeSettings>,
@@ -327,7 +327,7 @@ pub fn fix_off_screen_node_positions(
     let height = window.physical_height();
     let width = window.physical_width();
 
-    for (entity, mut transform, _) in query.iter_mut() {
+    for (entity, mut transform) in query.iter_mut() {
         let Some((new_x, new_y)) = fix_node_position_if_needed(
             height as f32,
             width as f32,
@@ -361,10 +361,10 @@ pub fn change_node_color(
 }
 
 pub fn emit_update_edge_event_after_node_collision(
-    query: Query<(Entity, &Velocity, &Transform, With<Node>)>,
+    query: Query<(Entity, &Velocity, &Transform), With<Node>>,
     mut event_writer: EventWriter<UpdateEdgeEvent>,
 ) {
-    for (entity, velocity, transform, _) in query.iter() {
+    for (entity, velocity, transform) in query.iter() {
         if velocity.linvel != Vec2::ZERO {
             event_writer.send(UpdateEdgeEvent {
                 changed_node: entity,
