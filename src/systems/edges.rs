@@ -29,14 +29,15 @@ pub fn emit_create_or_unspawn_edge_event(
     mut create_or_unspawn_edge_event_writer: EventWriter<CreateOrUnspawnEdgeEvent>,
     node_settings: Res<NodeSettings>,
 ) {
-    if query.iter().size_hint().0 < 2 {
-        return;
-    }
-
     let mut iter = query.iter();
 
-    let (first_entity, start_pos) = iter.next().expect("Can not get the first selected node");
-    let (second_entity, end_pos) = iter.next().expect("Can not get the second selected node");
+    let Some((first_entity, start_pos)) = iter.next() else {
+        return;
+    };
+
+    let Some((second_entity, end_pos)) = iter.next() else {
+        return;
+    };
 
     let mut path_builder = PathBuilder::new();
 
